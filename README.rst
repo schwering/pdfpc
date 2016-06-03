@@ -2,8 +2,36 @@
 pdfpc
 =====
 
-About
-=====
+About this fork
+===============
+
+This is a fork of pdfpc that adds a simple "ghost mode". When you want to
+give a 12 minute talk of the demo presentation
+(https://pdfpc.github.io/demo/pdfpc-demo.pdf) then you could call
+
+    pdfpc -d 13 pdfpc-demo.pdf
+
+where ``-d 13`` sets the countdown timer to 13 minutes. The countdown timer
+computes talk-duration / slide-count, which is 1 minute in this example, and
+displays whether you're "on schedule" during the talk: it displays the
+net-time gap to the schedule as well as the relative factor by which you'd
+need to speed up or down to finish your talk exactly in time. For instance,
+when you've been talking for 9 minutes but you're only on slide 7 already,
+you have only 4 minutes left for the last 6 slides, that is, you're 2
+minutes late and need to speed up by 50% (with respect to the schedule) to
+finish in time.
+
+In this context you may like find the flag ``-g`` useful in order to ignore
+the overlay recognition.
+
+To use this fork of pdfpc follow the "compile and install" instructions
+below.
+
+A plan for future work is a "real" ghost mode that records the slide
+transitions during one reference talk and uses this as reference schedule.
+
+About pdfpc
+===========
 
 pdfpc is a GTK based presentation viewer application for GNU/Linux which uses
 Keynote like multi-monitor output to provide meta information to the speaker
