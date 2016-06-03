@@ -40,3 +40,7 @@ pdfpcTimerLabel.overtime {
     color: red;
 }
 
+pdfpcTimerLabel.no-change-needed { color: green; }
+pdfpcTimerLabel.small-change-needed { color: yellow; }
+pdfpcTimerLabel.big-change-needed { color: red; }
+

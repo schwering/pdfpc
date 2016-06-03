@@ -31,7 +31,7 @@ namespace pdfpc {
       * Factory function for creating TimerLabels, depending if a duration was
       * given.
       */
-    TimerLabel getTimerLabel(int duration, time_t end_time, uint last_minutes = 0, time_t start_time = 0, bool clock_time = false) {
+    TimerLabel getTimerLabel(int duration, time_t end_time, uint last_minutes = 0, time_t start_time = 0, bool clock_time = false, int n_slides = 0) {
         if (clock_time) {
             return new TimeOfDayTimer();
         } else if (end_time > 0) {
@@ -65,6 +65,11 @@ namespace pdfpc {
         protected uint timeout = 0;
 
         /**
+         * How far are we in the presentation slide-wise?
+         */
+        protected double progress = 0.0;
+
+        /**
          * Default constructor taking the initial time as argument, as well as
          * the time to countdown until the talk actually starts.
          */
@@ -86,6 +91,10 @@ namespace pdfpc {
                 this.timeout = GLib.Timeout.add(1000, this.on_timeout);
             }
             this.update_time();
+        }
+
+        public virtual void set_progress(double progress) {
+            this.progress = progress;
         }
 
         /**
@@ -170,16 +179,18 @@ namespace pdfpc {
          * Shows a time (in seconds) in hh:mm:ss format, with an additional prefix
          */
         protected virtual void show_time(uint timeInSecs, string prefix) {
-            uint hours, minutes, seconds;
+            uint /*hours,*/ minutes, seconds;
 
-            hours = timeInSecs / 60 / 60;
-            minutes = timeInSecs / 60 % 60;
+            //hours = timeInSecs / 60 / 60;
+            //minutes = timeInSecs / 60 % 60;
+            minutes = timeInSecs / 60;
             seconds = timeInSecs % 60 % 60;
 
             this.set_text(
-                "%s%.2u:%.2u:%.2u".printf(
+                //"%s%.2u:%.2u:%.2u".printf(
+                "%s%.2u:%.2u".printf(
                     prefix,
-                    hours,
+                    //hours,
                     minutes,
                     seconds
                 )
@@ -227,19 +238,42 @@ namespace pdfpc {
                 context.remove_class("pretalk");
                 context.remove_class("last-minutes");
                 context.remove_class("overtime");
+                context.remove_class("no-change-needed");
+                context.remove_class("small-change-needed");
+                context.remove_class("big-change-needed");
+                int timePlanned = (int) (this.progress * this.duration);
+                if (this.time != 0 && timePlanned != 0) {
+                    // timeAbsDiff: absolute (in seconds) difference from planned schedule; positive means too slow
+                    // timeRelDiff: relative difference from planned schedule; positive means too slow
+                    // neededSpeedChange: the relative factor by which we need to speed up to return to schedule by end of the talk; positive means you need to be faster
+                    int timeAbsDiff = this.time - timePlanned;
+                    double timeRelDiff = ((double) this.time) / ((double) timePlanned) - 1.0;
+                    double neededSpeedChange = ((double) timeAbsDiff) / ((double) (duration - this.time));
+                    //double neededSpeedChange = ((double) (duration - timePlanned)) / ((double) (duration - this.time)) - 1.0;
+                    //prefix += "\u03B4=" + (timeAbsDiff > 0 ? "+" : "\u2212") + ((int) (timeRelDiff * 100)).abs().to_string() +"%   ";
+                    prefix += "\u0394=" + (timeAbsDiff > 0 ? "+" : "\u2212") + timeAbsDiff.abs().to_string() +"s   ";
+                    prefix += "\u03B2=" + (neededSpeedChange > 0 ? "+" : "\u2212") + ((int) (neededSpeedChange * 100)).abs().to_string() +"%   ";
+                    if (-0.05 <= neededSpeedChange <= 0.00) {
+                        context.add_class("no-change-needed");
+                    } else if (-0.10 <= neededSpeedChange && neededSpeedChange <= 0.04) {
+                        context.add_class("small-change-needed");
+                    } else {
+                        context.add_class("big-change-needed");
+                    }
+                }
                 if (this.time < this.duration) {
                     timeInSecs = duration - this.time;
                     // Still on presentation time
-                    if (timeInSecs < this.last_minutes * 60)
-                        context.add_class("last-minutes");
+                    //if (timeInSecs < this.last_minutes * 60)
+                    //    context.add_class("last-minutes");
                 } else {
                     // Time is over!
-                    context.remove_class("last-minutes");
-                    context.add_class("overtime");
+                    //context.remove_class("last-minutes");
+                    //context.add_class("overtime");
                     timeInSecs = this.time - duration;
 
                     // The prefix used for negative time values is a simple minus sign.
-                    prefix = "-";
+                    prefix = "\u2212";
                 }
             }
 

@@ -263,7 +263,8 @@ namespace pdfpc {
                 this.metadata.set_duration(0);
             }
             this.timer = getTimerLabel((int) this.metadata.get_duration() * 60,
-                end_time, Options.last_minutes, start_time, Options.use_time_of_day);
+                end_time, Options.last_minutes, start_time, Options.use_time_of_day,
+                (int) this.metadata.get_slide_count());
             this.timer.reset();
 
             this.n_slides = (int) this.metadata.get_slide_count();
@@ -726,6 +727,7 @@ namespace pdfpc {
          */
         void push_history() {
             this.history += this.current_slide_number;
+            update_timer_progress();
         }
 
         /**
@@ -737,6 +739,7 @@ namespace pdfpc {
             this.current_slide_number = page_number;
             this.current_user_slide_number = this.metadata.real_slide_to_user_slide(
                 this.current_slide_number);
+            update_timer_progress();
             this.timer.start();
             this.controllables_update();
         }
@@ -821,6 +824,7 @@ namespace pdfpc {
                     this.faded_to_black = false;
                 }
 
+                update_timer_progress();
                 this.controllables_update();
             } else if (this.black_on_end && !this.faded_to_black) {
                 this.fade_to_black();
@@ -850,6 +854,7 @@ namespace pdfpc {
                     this.current_slide_number = this.n_slides - 1;
                 }
             }
+            update_timer_progress();
 
             if (needs_update) {
                 if (!this.frozen) {
@@ -877,6 +882,7 @@ namespace pdfpc {
                 this.current_slide_number = this.n_slides - 1;
                 needs_update = true;
             }
+            update_timer_progress();
 
             if (needs_update) {
                 if (!this.frozen) {
@@ -899,6 +905,7 @@ namespace pdfpc {
                 } else {
                     --this.current_slide_number;
                 }
+                update_timer_progress();
 
                 if (!this.frozen) {
                     this.faded_to_black = false;
@@ -919,6 +926,7 @@ namespace pdfpc {
             } else {
                 this.current_slide_number = 0;
             }
+            update_timer_progress();
 
             if (!this.frozen) {
                 this.faded_to_black = false;
@@ -939,6 +947,7 @@ namespace pdfpc {
 
             this.current_slide_number = 0;
             this.current_user_slide_number = 0;
+            update_timer_progress();
 
             if (!this.frozen) {
                 this.faded_to_black = false;
@@ -959,6 +968,7 @@ namespace pdfpc {
 
             this.current_user_slide_number = this.metadata.get_end_user_slide() - 1;
             this.current_slide_number = this.metadata.user_slide_to_real_slide(this.current_user_slide_number);
+            update_timer_progress();
 
             if (!this.frozen) {
                 this.faded_to_black = false;
@@ -978,6 +988,7 @@ namespace pdfpc {
 
             this.current_user_slide_number = int.min(this.current_user_slide_number + 10, this.metadata.get_user_slide_count() - 1);
             this.current_slide_number = this.metadata.user_slide_to_real_slide(this.current_user_slide_number);
+            update_timer_progress();
 
             if (!this.frozen) {
                 this.faded_to_black = false;
@@ -997,6 +1008,7 @@ namespace pdfpc {
 
             this.current_user_slide_number = int.max(this.current_user_slide_number - 10, 0);
             this.current_slide_number = this.metadata.user_slide_to_real_slide(this.current_user_slide_number);
+            update_timer_progress();
 
             if (!this.frozen) {
                 this.faded_to_black = false;
@@ -1024,6 +1036,7 @@ namespace pdfpc {
             }
             this.current_user_slide_number = destination;
             this.current_slide_number = this.metadata.user_slide_to_real_slide(this.current_user_slide_number);
+            update_timer_progress();
             if (!this.frozen) {
                 this.faded_to_black = false;
             }
@@ -1049,11 +1062,21 @@ namespace pdfpc {
             this.current_slide_number = this.history[history_length - 1];
             this.current_user_slide_number = this.metadata.real_slide_to_user_slide(this.current_slide_number);
             this.history.resize(history_length - 1);
+            update_timer_progress();
 
             if (!this.frozen) {
                 this.faded_to_black = false;
             }
             this.controllables_update();
+        }
+
+        /**
+         * Tell timer how far we are slide-wise.
+         */
+        public void update_timer_progress() {
+           double i = (double) (this.current_slide_number + 1);
+           double n = (double) (this.metadata.get_end_user_slide());
+           this.timer.set_progress(i / n);
         }
 
         /**
@@ -1069,6 +1092,7 @@ namespace pdfpc {
         protected void controllables_reset() {
             this.current_slide_number = 0;
             this.current_user_slide_number = 0;
+            update_timer_progress();
             this.controllables_update();
             this.reset_timer();
         }
